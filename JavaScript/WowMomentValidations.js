@@ -16,17 +16,70 @@ SA.WowMoment = (function () {
         managementApproval: "sa_ManagementApproval",
         rejectionRemarks: "sa_RejectionRemarks"
     };
-
+    const NOTIFICATION_IDS = {
+        email: "SA_EMAIL_DOMAIN"
+    };
     function onLoad(executionContext) {
-        const formContext = executionContext.getFormContext();
+        // const formContext = executionContext.getFormContext();
+        validateEmail(executionContext);
+
     }
 
     function onSave(executionContext) {
         const formContext = executionContext.getFormContext();
     }
 
+    function validateEmail(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        const emailAttribute =
+            formContext.getAttribute(FIELDS.emailAddress);
+
+        const emailControl =
+            formContext.getControl(FIELDS.emailAddress);
+
+        if (!emailAttribute || !emailControl) {
+            console.error(
+                "Email Address column was not found. Check its logical name."
+            );
+
+            return true;
+        }
+
+        emailControl.clearNotification(
+            NOTIFICATION_IDS.email
+        );
+
+        const emailValue = emailAttribute.getValue();
+
+        if (!emailValue) {
+            return true;
+        }
+
+        const normalizedEmail =
+            emailValue.trim().toLowerCase();
+
+        if (
+            normalizedEmail.endsWith(
+                "@nsquarexperts.com"
+            )
+        ) {
+            emailControl.setNotification(
+                "Email addresses belonging to @nsquarexperts.com are not allowed.",
+                NOTIFICATION_IDS.email
+            );
+
+            emailAttribute.setValue(null);
+
+            return false;
+        }
+
+        return true;
+    }
+
     return {
         onLoad: onLoad,
-        onSave: onSave
+        onSave: onSave,
+        validateEmail: validateEmail
     };
 })();
