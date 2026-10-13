@@ -28,8 +28,7 @@ SA.WowMoment = (function () {
     function onLoad(executionContext) {
         validateEmail(executionContext);
         configureShopLookup(executionContext);
-
-
+        handleOccasionChange(executionContext, false);
     }
 
     function onSave(executionContext) {
@@ -146,10 +145,67 @@ SA.WowMoment = (function () {
             filterXml,
             SHOP_CONFIG.tableLogicalName
         );
-    } return {
+    }
+    function handleOccasionChange(executionContext, clearExistingShop) {
+        const formContext = executionContext.getFormContext();
+
+        const occasionAttribute =
+            formContext.getAttribute(FIELDS.occasion);
+
+        const shopAttribute =
+            formContext.getAttribute(FIELDS.shops);
+
+        const shopControl =
+            formContext.getControl(FIELDS.shops);
+
+        if (
+            !occasionAttribute ||
+            !shopAttribute ||
+            !shopControl
+        ) {
+            console.error(
+                "Occasion or Shops field was not found. Verify the logical names."
+            );
+
+            return;
+        }
+
+        const occasionValue =
+            occasionAttribute.getValue();
+
+        /*
+         * Clear an existing Shop when Occasion is changed.
+         * This prevents a Shop belonging to the old Occasion
+         * from remaining selected.
+         */
+        if (clearExistingShop === true) {
+            shopAttribute.setValue(null);
+        }
+
+        /*
+         * If Occasion is empty:
+         * 1. Clear Shops
+         * 2. Lock Shops
+         */
+        if (occasionValue === null) {
+            shopAttribute.setValue(null);
+            shopControl.setDisabled(true);
+
+            return;
+        }
+
+        /*
+         * If Occasion has a value:
+         * Unlock Shops so the user can select a filtered Shop.
+         */
+        shopControl.setDisabled(false);
+    }
+
+    return {
         onLoad: onLoad,
         onSave: onSave,
         validateEmail: validateEmail,
-        configureShopLookup: configureShopLookup
+        configureShopLookup: configureShopLookup,
+        handleOccasionChange: handleOccasionChange
     };
 })();
