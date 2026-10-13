@@ -19,9 +19,16 @@ SA.WowMoment = (function () {
     const NOTIFICATION_IDS = {
         email: "SA_EMAIL_DOMAIN"
     };
+
+    const SHOP_CONFIG = {
+        tableLogicalName: "sa_shop",
+        eventColumnLogicalName: "sa_eventsorganizedhere"
+    };
+
     function onLoad(executionContext) {
-        // const formContext = executionContext.getFormContext();
         validateEmail(executionContext);
+        configureShopLookup(executionContext);
+
 
     }
 
@@ -84,10 +91,65 @@ SA.WowMoment = (function () {
         }
         return true;
     }
+    function configureShopLookup(executionContext) {
+        const formContext = executionContext.getFormContext();
 
-    return {
+        const shopControl =
+            formContext.getControl(FIELDS.shops);
+
+        if (!shopControl) {
+            console.error(
+                "Shops lookup was not found. Verify its logical name:",
+                FIELDS.shops
+            );
+
+            return;
+        }
+
+        shopControl.addPreSearch(function () {
+            filterShops(formContext);
+        });
+    }
+
+    function filterShops(formContext) {
+        const occasionAttribute =
+            formContext.getAttribute(FIELDS.occasion);
+
+        const shopControl =
+            formContext.getControl(FIELDS.shops);
+
+        if (!occasionAttribute || !shopControl) {
+            console.error(
+                "Occasion or Shops field was not found. Verify the logical names."
+            );
+
+            return;
+        }
+
+        const occasionValue =
+            occasionAttribute.getValue();
+
+        if (occasionValue === null) {
+            return;
+        }
+
+        const filterXml =
+            "<filter type='and'>" +
+            "<condition attribute='" +
+            SHOP_CONFIG.eventColumnLogicalName +
+            "' operator='eq' value='" +
+            occasionValue +
+            "' />" +
+            "</filter>";
+
+        shopControl.addCustomFilter(
+            filterXml,
+            SHOP_CONFIG.tableLogicalName
+        );
+    } return {
         onLoad: onLoad,
         onSave: onSave,
-        validateEmail: validateEmail
+        validateEmail: validateEmail,
+        configureShopLookup: configureShopLookup
     };
 })();
