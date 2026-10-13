@@ -5,16 +5,16 @@ SA.WowMoment = (function () {
 
     const FIELDS = {
         title: "sa_name",
-        firstName: "sa_FirstName",
-        lastName: "sa_LastName",
-        emailAddress: "sa_EmailAddress",
-        mobileNumber: "sa_MobileNumber",
-        wowMomentDate: "sa_WowMomentDate",
-        occasion: "sa_Occasion",
-        shops: "sa_Shops",
-        spouseName: "sa_SpouseName",
-        managementApproval: "sa_ManagementApproval",
-        rejectionRemarks: "sa_RejectionRemarks"
+        firstName: "sa_firstname",
+        lastName: "sa_lastname",
+        emailAddress: "sa_emailaddress",
+        mobileNumber: "sa_mobilenumber",
+        wowMomentDate: "sa_wowmomentdate",
+        occasion: "sa_occasion",
+        shops: "sa_shops",
+        spouseName: "sa_spousename",
+        managementApproval: "sa_managementapproval",
+        rejectionRemarks: "sa_rejectionremarks"
     };
     const NOTIFICATION_IDS = {
         email: "SA_EMAIL_DOMAIN"
@@ -28,7 +28,6 @@ SA.WowMoment = (function () {
     function onSave(executionContext) {
         const formContext = executionContext.getFormContext();
     }
-
     function validateEmail(executionContext) {
         const formContext = executionContext.getFormContext();
 
@@ -39,14 +38,21 @@ SA.WowMoment = (function () {
             formContext.getControl(FIELDS.emailAddress);
 
         if (!emailAttribute || !emailControl) {
-            console.error(
-                "Email Address column was not found. Check its logical name."
+            formContext.ui.setFormNotification(
+                "Email Address field was not found. Verify its logical name.",
+                "ERROR",
+                "EMAIL_FIELD_NOT_FOUND"
             );
 
-            return true;
+            return false;
         }
 
+        // Clear previous messages before validating again.
         emailControl.clearNotification(
+            NOTIFICATION_IDS.email
+        );
+
+        formContext.ui.clearFormNotification(
             NOTIFICATION_IDS.email
         );
 
@@ -56,6 +62,7 @@ SA.WowMoment = (function () {
             return true;
         }
 
+        // Removes beginning/end spaces and ignores letter casing.
         const normalizedEmail =
             emailValue.trim().toLowerCase();
 
@@ -64,16 +71,17 @@ SA.WowMoment = (function () {
                 "@nsquarexperts.com"
             )
         ) {
-            emailControl.setNotification(
-                "Email addresses belonging to @nsquarexperts.com are not allowed.",
-                NOTIFICATION_IDS.email
-            );
-
+            // Clear the invalid email value.
             emailAttribute.setValue(null);
 
+            // Display the error at the top of the form.
+            formContext.ui.setFormNotification(
+                "Email addresses belonging to @nsquarexperts.com are not allowed. The Email Address has been cleared.",
+                "ERROR",
+                NOTIFICATION_IDS.email
+            );
             return false;
         }
-
         return true;
     }
 
