@@ -17,7 +17,9 @@ SA.WowMoment = (function () {
         rejectionRemarks: "sa_rejectionremarks"
     };
     const NOTIFICATION_IDS = {
-        email: "SA_EMAIL_DOMAIN"
+        email: "SA_EMAIL_DOMAIN",
+        wowMomentDate: "SA_WOW_MOMENT_DATE"
+
     };
 
     const SHOP_CONFIG = {
@@ -30,10 +32,21 @@ SA.WowMoment = (function () {
         configureShopLookup(executionContext);
         handleOccasionChange(executionContext, false);
         handleApprovalChange(executionContext);
+        validateWowMomentDate(executionContext);
     }
 
     function onSave(executionContext) {
-        const formContext = executionContext.getFormContext();
+        const isDateValid =
+            validateWowMomentDate(
+                executionContext
+            );
+
+        if (!isDateValid) {
+            executionContext
+                .getEventArgs()
+                .preventDefault();
+        }
+
     }
     function validateEmail(executionContext) {
         const formContext = executionContext.getFormContext();
@@ -90,6 +103,78 @@ SA.WowMoment = (function () {
             return false;
         }
         return true;
+    }
+    function validateWowMomentDate(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        const dateAttribute = formContext.getAttribute(
+            FIELDS.wowMomentDate
+        );
+
+        const dateControl = formContext.getControl(
+            FIELDS.wowMomentDate
+        );
+
+        if (!dateAttribute || !dateControl) {
+            console.error(
+                "Wow Moment Date field was not found. Verify its logical name:",
+                FIELDS.wowMomentDate
+            );
+
+            return true;
+        }
+
+        dateControl.clearNotification(
+            NOTIFICATION_IDS.wowMomentDate
+        );
+
+        const selectedDate = dateAttribute.getValue();
+
+        if (!selectedDate) {
+            return true;
+        }
+
+        const today = startOfDay(new Date());
+
+        const enteredDate = startOfDay(
+            new Date(selectedDate)
+        );
+
+        const minimumDate = addDays(today, 2);
+
+        const maximumDate = addDays(today, 180);
+
+        if (
+            enteredDate < minimumDate ||
+            enteredDate > maximumDate
+        ) {
+            dateControl.setNotification(
+                "Wow Moment Date must be between 2 days and 180 days from the current date.",
+                NOTIFICATION_IDS.wowMomentDate
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    function startOfDay(dateValue) {
+        return new Date(
+            dateValue.getFullYear(),
+            dateValue.getMonth(),
+            dateValue.getDate()
+        );
+    }
+
+    function addDays(dateValue, numberOfDays) {
+        const result = new Date(dateValue);
+
+        result.setDate(
+            result.getDate() + numberOfDays
+        );
+
+        return result;
     }
     function configureShopLookup(executionContext) {
         const formContext = executionContext.getFormContext();
@@ -376,6 +461,7 @@ SA.WowMoment = (function () {
         validateEmail: validateEmail,
         configureShopLookup: configureShopLookup,
         handleOccasionChange: handleOccasionChange,
-        handleApprovalChange: handleApprovalChange
+        handleApprovalChange: handleApprovalChange,
+        validateWowMomentDate: validateWowMomentDate
     };
 })();
