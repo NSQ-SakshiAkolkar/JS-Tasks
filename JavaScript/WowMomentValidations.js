@@ -29,6 +29,7 @@ SA.WowMoment = (function () {
         validateEmail(executionContext);
         configureShopLookup(executionContext);
         handleOccasionChange(executionContext, false);
+        handleApprovalChange(executionContext);
     }
 
     function onSave(executionContext) {
@@ -278,12 +279,103 @@ SA.WowMoment = (function () {
 
         return selectedOption.text.trim();
     }
+    function handleApprovalChange(executionContext) {
+        const formContext =
+            executionContext.getFormContext();
+
+        const approvalAttribute =
+            formContext.getAttribute(
+                FIELDS.managementApproval
+            );
+
+        if (!approvalAttribute) {
+            console.error(
+                "Management Approval field was not found. Verify its logical name:",
+                FIELDS.managementApproval
+            );
+
+            return;
+        }
+
+        const approvalText =
+            getSelectedOptionText(
+                approvalAttribute
+            ).toLowerCase();
+
+        const shouldLockFields =
+            approvalText === "initiated" ||
+            approvalText === "approved" ||
+            approvalText === "rejected";
+
+        setEventFieldsLocked(
+            formContext,
+            shouldLockFields
+        );
+
+        /*
+         * When approval is blank, restore the normal
+         * Occasion and Shops behavior.
+         */
+        if (!shouldLockFields) {
+            handleOccasionChange(
+                executionContext,
+                false
+            );
+        }
+    }
+
+    function setEventFieldsLocked(
+        formContext,
+        shouldLock
+    ) {
+        const fieldsToLock = [
+            FIELDS.title,
+            FIELDS.firstName,
+            FIELDS.lastName,
+            FIELDS.emailAddress,
+            FIELDS.mobileNumber,
+            FIELDS.wowMomentDate,
+            FIELDS.occasion,
+            FIELDS.shops,
+            FIELDS.spouseName
+        ];
+
+        fieldsToLock.forEach(function (fieldName) {
+            const attribute =
+                formContext.getAttribute(
+                    fieldName
+                );
+
+            if (!attribute) {
+                console.warn(
+                    "Field was not found and could not be locked:",
+                    fieldName
+                );
+
+                return;
+            }
+
+            /*
+             * Lock every control connected to the column.
+             * This also handles columns displayed more than
+             * once on the form.
+             */
+            attribute.controls.forEach(
+                function (control) {
+                    control.setDisabled(
+                        shouldLock
+                    );
+                }
+            );
+        });
+    }
 
     return {
         onLoad: onLoad,
         onSave: onSave,
         validateEmail: validateEmail,
         configureShopLookup: configureShopLookup,
-        handleOccasionChange: handleOccasionChange
+        handleOccasionChange: handleOccasionChange,
+        handleApprovalChange: handleApprovalChange
     };
 })();
