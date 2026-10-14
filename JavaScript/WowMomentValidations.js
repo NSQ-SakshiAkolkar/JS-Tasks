@@ -170,8 +170,19 @@ SA.WowMoment = (function () {
             return;
         }
 
-        const occasionValue =
-            occasionAttribute.getValue();
+        const occasionValue = occasionAttribute.getValue();
+
+        const occasionText = getSelectedOptionText(
+            occasionAttribute
+        );
+
+        const isWeddingShoot =
+            occasionText.toLowerCase() === "wedding shoot";
+
+        setSpouseNameBehavior(
+            formContext,
+            isWeddingShoot
+        );
 
         /*
          * Clear an existing Shop when Occasion is changed.
@@ -199,6 +210,73 @@ SA.WowMoment = (function () {
          * Unlock Shops so the user can select a filtered Shop.
          */
         shopControl.setDisabled(false);
+    }
+    function setSpouseNameBehavior(
+        formContext,
+        isWeddingShoot
+    ) {
+        const spouseAttribute =
+            formContext.getAttribute(
+                FIELDS.spouseName
+            );
+
+        const spouseControl =
+            formContext.getControl(
+                FIELDS.spouseName
+            );
+
+        if (!spouseAttribute || !spouseControl) {
+            console.error(
+                "Spouse Name field was not found. Verify its logical name:",
+                FIELDS.spouseName
+            );
+
+            return;
+        }
+
+        /*
+         * Show only for Wedding Shoot.
+         */
+        spouseControl.setVisible(
+            isWeddingShoot
+        );
+
+        /*
+         * Make mandatory only for Wedding Shoot.
+         */
+        spouseAttribute.setRequiredLevel(
+            isWeddingShoot
+                ? "required"
+                : "none"
+        );
+
+        /*
+         * Clear outdated value when Occasion
+         * is not Wedding Shoot.
+         */
+        if (!isWeddingShoot) {
+            spouseAttribute.setValue(null);
+        }
+    }
+    function getSelectedOptionText(attribute) {
+        if (
+            !attribute ||
+            attribute.getValue() === null
+        ) {
+            return "";
+        }
+
+        const selectedOption =
+            attribute.getSelectedOption();
+
+        if (
+            !selectedOption ||
+            !selectedOption.text
+        ) {
+            return "";
+        }
+
+        return selectedOption.text.trim();
     }
 
     return {
