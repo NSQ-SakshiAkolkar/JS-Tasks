@@ -11,18 +11,27 @@ SA.EventFeedback = (function () {
     };
 
     const NOTIFICATION_IDS = {
-        feedbackComments: "SA_FEEDBACK_COMMENTS"
+        feedbackComments: "SA_FEEDBACK_COMMENTS",
+        followUpRemarks: "SA_FOLLOW_UP_REMARKS"
+
     };
 
     function onLoad(executionContext) {
         handleCustomerRatingChange(executionContext);
+        handleFollowUpRequiredChange(executionContext);
+
     }
 
     function onSave(executionContext) {
         const areFeedbackCommentsValid =
             validateFeedbackComments(executionContext);
+        const areFollowUpRemarksValid =
+            validateFollowUpRemarks(
+                executionContext
+            );
 
-        if (!areFeedbackCommentsValid) {
+        if (!areFeedbackCommentsValid ||
+            !areFollowUpRemarksValid) {
             executionContext
                 .getEventArgs()
                 .preventDefault();
@@ -135,6 +144,120 @@ SA.EventFeedback = (function () {
 
         return true;
     }
+    function handleFollowUpRequiredChange(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        const followUpRequiredAttribute =
+            formContext.getAttribute(
+                FIELDS.followUpRequired
+            );
+
+        const followUpRemarksAttribute =
+            formContext.getAttribute(
+                FIELDS.followUpRemarks
+            );
+
+        const followUpRemarksControl =
+            formContext.getControl(
+                FIELDS.followUpRemarks
+            );
+
+        if (
+            !followUpRequiredAttribute ||
+            !followUpRemarksAttribute ||
+            !followUpRemarksControl
+        ) {
+            console.error(
+                "Follow Up Required or Follow Up Remarks field was not found. Verify the logical names."
+            );
+
+            return;
+        }
+
+        const isFollowUpRequired =
+            followUpRequiredAttribute.getValue() === true;
+
+        followUpRemarksControl.setVisible(
+            isFollowUpRequired
+        );
+
+        followUpRemarksAttribute.setRequiredLevel(
+            isFollowUpRequired
+                ? "required"
+                : "none"
+        );
+
+        followUpRemarksControl.clearNotification(
+            NOTIFICATION_IDS.followUpRemarks
+        );
+
+        if (!isFollowUpRequired) {
+            followUpRemarksAttribute.setValue(null);
+        }
+    }
+    function validateFollowUpRemarks(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        const followUpRequiredAttribute =
+            formContext.getAttribute(
+                FIELDS.followUpRequired
+            );
+
+        const followUpRemarksAttribute =
+            formContext.getAttribute(
+                FIELDS.followUpRemarks
+            );
+
+        const followUpRemarksControl =
+            formContext.getControl(
+                FIELDS.followUpRemarks
+            );
+
+        if (
+            !followUpRequiredAttribute ||
+            !followUpRemarksAttribute ||
+            !followUpRemarksControl
+        ) {
+            console.error(
+                "Follow Up Required or Follow Up Remarks field was not found. Verify the logical names."
+            );
+
+            return true;
+        }
+
+        followUpRemarksControl.clearNotification(
+            NOTIFICATION_IDS.followUpRemarks
+        );
+
+        const isFollowUpRequired =
+            followUpRequiredAttribute.getValue() === true;
+
+        const remarksValue =
+            followUpRemarksAttribute.getValue();
+
+        if (
+            isFollowUpRequired &&
+            (
+                !remarksValue ||
+                remarksValue.trim() === ""
+            )
+        ) {
+            followUpRemarksControl.setVisible(true);
+
+            followUpRemarksAttribute.setRequiredLevel(
+                "required"
+            );
+
+            followUpRemarksControl.setNotification(
+                "Follow Up Remarks is mandatory when Follow Up Required is Yes.",
+                NOTIFICATION_IDS.followUpRemarks
+            );
+
+            return false;
+        }
+
+        return true;
+    }
     function getSelectedOptionText(attribute) {
         if (
             !attribute ||
@@ -161,6 +284,11 @@ SA.EventFeedback = (function () {
         handleCustomerRatingChange:
             handleCustomerRatingChange,
         validateFeedbackComments:
-            validateFeedbackComments
+            validateFeedbackComments,
+        handleFollowUpRequiredChange:
+            handleFollowUpRequiredChange,
+        validateFollowUpRemarks:
+            validateFollowUpRemarks
+
     };
 })();
