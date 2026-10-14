@@ -18,8 +18,9 @@ SA.WowMoment = (function () {
     };
     const NOTIFICATION_IDS = {
         email: "SA_EMAIL_DOMAIN",
-        wowMomentDate: "SA_WOW_MOMENT_DATE"
-
+        wowMomentDate: "SA_WOW_MOMENT_DATE",
+        firstName: "SA_FIRST_NAME",
+    lastName: "SA_LAST_NAME"
     };
 
     const SHOP_CONFIG = {
@@ -33,6 +34,9 @@ SA.WowMoment = (function () {
         handleOccasionChange(executionContext, false);
         handleApprovalChange(executionContext);
         validateWowMomentDate(executionContext);
+            validateFirstName(executionContext);
+    validateLastName(executionContext);
+
     }
 
     function onSave(executionContext) {
@@ -40,8 +44,21 @@ SA.WowMoment = (function () {
             validateWowMomentDate(
                 executionContext
             );
+            const isFirstNameValid = validateFirstName(
+        executionContext
+    );
 
-        if (!isDateValid) {
+    const isLastNameValid = validateLastName(
+        executionContext
+    );
+
+
+            if (
+        !isDateValid ||
+        !isFirstNameValid ||
+        !isLastNameValid
+    ) {
+
             executionContext
                 .getEventArgs()
                 .preventDefault();
@@ -454,7 +471,80 @@ SA.WowMoment = (function () {
             );
         });
     }
+    function validateFirstName(executionContext) {
+    const formContext = executionContext.getFormContext();
 
+    return validatePersonName(
+        formContext,
+        FIELDS.firstName,
+        "First Name",
+        NOTIFICATION_IDS.firstName
+    );
+}
+function validateLastName(executionContext) {
+    const formContext = executionContext.getFormContext();
+
+    return validatePersonName(
+        formContext,
+        FIELDS.lastName,
+        "Last Name",
+        NOTIFICATION_IDS.lastName
+    );
+}
+function validatePersonName(
+    formContext,
+    fieldLogicalName,
+    fieldDisplayName,
+    notificationId
+) {
+    const nameAttribute = formContext.getAttribute(
+        fieldLogicalName
+    );
+
+    const nameControl = formContext.getControl(
+        fieldLogicalName
+    );
+
+    if (!nameAttribute || !nameControl) {
+        console.error(
+            fieldDisplayName +
+                " field was not found. Verify its logical name:",
+            fieldLogicalName
+        );
+
+        return true;
+    }
+
+    nameControl.clearNotification(
+        notificationId
+    );
+
+    const nameValue = nameAttribute.getValue();
+
+    if (!nameValue) {
+        return true;
+    }
+
+    const trimmedName = nameValue.trim();
+
+    const namePattern = /^[A-Za-z-]{2,}$/;
+
+    if (!namePattern.test(trimmedName)) {
+        nameControl.setNotification(
+            fieldDisplayName +
+                " must contain at least two characters. Only alphabetic characters and hyphens are allowed.",
+            notificationId
+        );
+
+        return false;
+    }
+
+    if (nameValue !== trimmedName) {
+        nameAttribute.setValue(trimmedName);
+    }
+
+    return true;
+}
     return {
         onLoad: onLoad,
         onSave: onSave,
@@ -462,6 +552,9 @@ SA.WowMoment = (function () {
         configureShopLookup: configureShopLookup,
         handleOccasionChange: handleOccasionChange,
         handleApprovalChange: handleApprovalChange,
-        validateWowMomentDate: validateWowMomentDate
+        validateWowMomentDate: validateWowMomentDate,
+        validateFirstName: validateFirstName,
+    validateLastName: validateLastName
+
     };
 })();
