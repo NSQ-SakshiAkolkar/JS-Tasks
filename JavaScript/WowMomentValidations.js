@@ -20,7 +20,9 @@ SA.WowMoment = (function () {
         email: "SA_EMAIL_DOMAIN",
         wowMomentDate: "SA_WOW_MOMENT_DATE",
         firstName: "SA_FIRST_NAME",
-    lastName: "SA_LAST_NAME"
+        lastName: "SA_LAST_NAME",
+        mobileNumber: "SA_MOBILE_NUMBER"
+
     };
 
     const SHOP_CONFIG = {
@@ -34,9 +36,9 @@ SA.WowMoment = (function () {
         handleOccasionChange(executionContext, false);
         handleApprovalChange(executionContext);
         validateWowMomentDate(executionContext);
-            validateFirstName(executionContext);
-    validateLastName(executionContext);
-
+        validateFirstName(executionContext);
+        validateLastName(executionContext);
+        validateMobileNumber(executionContext);
     }
 
     function onSave(executionContext) {
@@ -44,20 +46,25 @@ SA.WowMoment = (function () {
             validateWowMomentDate(
                 executionContext
             );
-            const isFirstNameValid = validateFirstName(
-        executionContext
-    );
+        const isFirstNameValid = validateFirstName(
+            executionContext
+        );
 
-    const isLastNameValid = validateLastName(
-        executionContext
-    );
+        const isLastNameValid = validateLastName(
+            executionContext
+        );
+        const isMobileNumberValid = validateMobileNumber(
+            executionContext
+        );
 
 
-            if (
-        !isDateValid ||
-        !isFirstNameValid ||
-        !isLastNameValid
-    ) {
+        if (
+            !isDateValid ||
+            !isFirstNameValid ||
+            !isLastNameValid ||
+            !isMobileNumberValid
+
+        ) {
 
             executionContext
                 .getEventArgs()
@@ -472,79 +479,122 @@ SA.WowMoment = (function () {
         });
     }
     function validateFirstName(executionContext) {
-    const formContext = executionContext.getFormContext();
+        const formContext = executionContext.getFormContext();
 
-    return validatePersonName(
+        return validatePersonName(
+            formContext,
+            FIELDS.firstName,
+            "First Name",
+            NOTIFICATION_IDS.firstName
+        );
+    }
+    function validateLastName(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        return validatePersonName(
+            formContext,
+            FIELDS.lastName,
+            "Last Name",
+            NOTIFICATION_IDS.lastName
+        );
+    }
+    function validatePersonName(
         formContext,
-        FIELDS.firstName,
-        "First Name",
-        NOTIFICATION_IDS.firstName
-    );
-}
-function validateLastName(executionContext) {
-    const formContext = executionContext.getFormContext();
-
-    return validatePersonName(
-        formContext,
-        FIELDS.lastName,
-        "Last Name",
-        NOTIFICATION_IDS.lastName
-    );
-}
-function validatePersonName(
-    formContext,
-    fieldLogicalName,
-    fieldDisplayName,
-    notificationId
-) {
-    const nameAttribute = formContext.getAttribute(
-        fieldLogicalName
-    );
-
-    const nameControl = formContext.getControl(
-        fieldLogicalName
-    );
-
-    if (!nameAttribute || !nameControl) {
-        console.error(
-            fieldDisplayName +
-                " field was not found. Verify its logical name:",
+        fieldLogicalName,
+        fieldDisplayName,
+        notificationId
+    ) {
+        const nameAttribute = formContext.getAttribute(
             fieldLogicalName
         );
 
-        return true;
-    }
+        const nameControl = formContext.getControl(
+            fieldLogicalName
+        );
 
-    nameControl.clearNotification(
-        notificationId
-    );
+        if (!nameAttribute || !nameControl) {
+            console.error(
+                fieldDisplayName +
+                " field was not found. Verify its logical name:",
+                fieldLogicalName
+            );
 
-    const nameValue = nameAttribute.getValue();
+            return true;
+        }
 
-    if (!nameValue) {
-        return true;
-    }
-
-    const trimmedName = nameValue.trim();
-
-    const namePattern = /^[A-Za-z-]{2,}$/;
-
-    if (!namePattern.test(trimmedName)) {
-        nameControl.setNotification(
-            fieldDisplayName +
-                " must contain at least two characters. Only alphabetic characters and hyphens are allowed.",
+        nameControl.clearNotification(
             notificationId
         );
 
-        return false;
-    }
+        const nameValue = nameAttribute.getValue();
 
-    if (nameValue !== trimmedName) {
-        nameAttribute.setValue(trimmedName);
-    }
+        if (!nameValue) {
+            return true;
+        }
 
-    return true;
-}
+        const trimmedName = nameValue.trim();
+
+        const namePattern = /^[A-Za-z-]{2,}$/;
+
+        if (!namePattern.test(trimmedName)) {
+            nameControl.setNotification(
+                fieldDisplayName +
+                " must contain at least two characters. Only alphabetic characters and hyphens are allowed.",
+                notificationId
+            );
+
+            return false;
+        }
+
+        if (nameValue !== trimmedName) {
+            nameAttribute.setValue(trimmedName);
+        }
+
+        return true;
+    }
+    function validateMobileNumber(executionContext) {
+        const formContext = executionContext.getFormContext();
+
+        const mobileAttribute = formContext.getAttribute(
+            FIELDS.mobileNumber
+        );
+
+        const mobileControl = formContext.getControl(
+            FIELDS.mobileNumber
+        );
+
+        if (!mobileAttribute || !mobileControl) {
+            console.error(
+                "Mobile Number field was not found. Verify its logical name:",
+                FIELDS.mobileNumber
+            );
+
+            return true;
+        }
+
+        mobileControl.clearNotification(
+            NOTIFICATION_IDS.mobileNumber
+        );
+
+        const mobileValue = mobileAttribute.getValue();
+
+        if (!mobileValue) {
+            return true;
+        }
+
+        const mobilePattern = /^\+91[0-9]{10}$/;
+
+        if (!mobilePattern.test(mobileValue)) {
+            mobileControl.setNotification(
+                "Mobile Number must start with +91 and contain exactly 10 digits after the country code. Spaces, letters, and other special characters are not allowed.",
+                NOTIFICATION_IDS.mobileNumber
+            );
+
+            return false;
+        }
+
+        return true;
+    }
     return {
         onLoad: onLoad,
         onSave: onSave,
@@ -554,7 +604,7 @@ function validatePersonName(
         handleApprovalChange: handleApprovalChange,
         validateWowMomentDate: validateWowMomentDate,
         validateFirstName: validateFirstName,
-    validateLastName: validateLastName
-
+        validateLastName: validateLastName,
+        validateMobileNumber: validateMobileNumber
     };
 })();
