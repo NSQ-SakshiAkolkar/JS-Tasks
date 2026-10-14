@@ -21,8 +21,8 @@ SA.WowMoment = (function () {
         wowMomentDate: "SA_WOW_MOMENT_DATE",
         firstName: "SA_FIRST_NAME",
         lastName: "SA_LAST_NAME",
-        mobileNumber: "SA_MOBILE_NUMBER"
-
+        mobileNumber: "SA_MOBILE_NUMBER",
+        rejectionRemarks: "SA_REJECTION_REMARKS"
     };
 
     const SHOP_CONFIG = {
@@ -56,7 +56,10 @@ SA.WowMoment = (function () {
         const isMobileNumberValid = validateMobileNumber(
             executionContext
         );
-
+        const areRejectionRemarksValid =
+            validateRejectionRemarks(
+                executionContext
+            );
 
         if (
             !isDateValid ||
@@ -410,6 +413,13 @@ SA.WowMoment = (function () {
             getSelectedOptionText(
                 approvalAttribute
             ).toLowerCase();
+        const isRejected =
+            approvalText === "rejected";
+
+        setRejectionRemarksBehavior(
+            formContext,
+            isRejected
+        );
 
         const shouldLockFields =
             approvalText === "initiated" ||
@@ -477,6 +487,109 @@ SA.WowMoment = (function () {
                 }
             );
         });
+    }
+    function setRejectionRemarksBehavior(
+        formContext,
+        isRejected
+    ) {
+        const remarksAttribute =
+            formContext.getAttribute(
+                FIELDS.rejectionRemarks
+            );
+
+        const remarksControl =
+            formContext.getControl(
+                FIELDS.rejectionRemarks
+            );
+
+        if (!remarksAttribute || !remarksControl) {
+            console.error(
+                "Rejection Remarks field was not found. Verify its logical name:",
+                FIELDS.rejectionRemarks
+            );
+
+            return;
+        }
+
+        remarksControl.setVisible(isRejected);
+
+        remarksAttribute.setRequiredLevel(
+            isRejected ? "required" : "none"
+        );
+
+        remarksControl.clearNotification(
+            NOTIFICATION_IDS.rejectionRemarks
+        );
+
+        if (!isRejected) {
+            remarksAttribute.setValue(null);
+        }
+    }
+    function validateRejectionRemarks(executionContext) {
+        const formContext =
+            executionContext.getFormContext();
+
+        const approvalAttribute =
+            formContext.getAttribute(
+                FIELDS.managementApproval
+            );
+
+        const remarksAttribute =
+            formContext.getAttribute(
+                FIELDS.rejectionRemarks
+            );
+
+        const remarksControl =
+            formContext.getControl(
+                FIELDS.rejectionRemarks
+            );
+
+        if (
+            !approvalAttribute ||
+            !remarksAttribute ||
+            !remarksControl
+        ) {
+            console.error(
+                "Management Approval or Rejection Remarks field was not found. Verify the logical names."
+            );
+
+            return true;
+        }
+
+        remarksControl.clearNotification(
+            NOTIFICATION_IDS.rejectionRemarks
+        );
+
+        const approvalText =
+            getSelectedOptionText(
+                approvalAttribute
+            ).toLowerCase();
+
+        const remarksValue =
+            remarksAttribute.getValue();
+
+        if (
+            approvalText === "rejected" &&
+            (
+                !remarksValue ||
+                remarksValue.trim() === ""
+            )
+        ) {
+            remarksControl.setVisible(true);
+
+            remarksAttribute.setRequiredLevel(
+                "required"
+            );
+
+            remarksControl.setNotification(
+                "Rejection Remarks is mandatory when Management Approval is Rejected.",
+                NOTIFICATION_IDS.rejectionRemarks
+            );
+
+            return false;
+        }
+
+        return true;
     }
     function validateFirstName(executionContext) {
         const formContext = executionContext.getFormContext();
@@ -595,6 +708,7 @@ SA.WowMoment = (function () {
 
         return true;
     }
+
     return {
         onLoad: onLoad,
         onSave: onSave,
@@ -605,6 +719,7 @@ SA.WowMoment = (function () {
         validateWowMomentDate: validateWowMomentDate,
         validateFirstName: validateFirstName,
         validateLastName: validateLastName,
-        validateMobileNumber: validateMobileNumber
+        validateMobileNumber: validateMobileNumber,
+        validateRejectionRemarks: validateRejectionRemarks
     };
 })();
